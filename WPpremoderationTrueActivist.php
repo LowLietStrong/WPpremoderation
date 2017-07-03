@@ -7,6 +7,8 @@ Version: 1.0
 Author: WebWare
 */
 
+
+
 // Hook for adding admin menus
 add_action('admin_menu', 'premoderationTa_add_pages');
 
@@ -22,9 +24,10 @@ function PremoderationTA_admin() {
 		}
 	}
 
-    echo "<h2>Test Toplevel</h2>";
+    echo "<h2>Premoderation</h2>";
+    echo "<p>Save as 'Draft' posts containing the following words <b title='Type the words you want to block, separated by commas.'>( ? )</b></p>";
     echo '<form method="POST">';
-    echo "<textarea name='replace'>".get_option('premoderationTaReplace')."</textarea>";
+    echo "<textarea name='replace' cols='80' row='8'>".get_option('premoderationTaReplace')."</textarea>";
     submit_button();
     echo "</form>";
 }
@@ -36,6 +39,7 @@ function filterHookTA(){
 
 function premoderationTA(){
 
+	$post_id = get_the_ID();
 
 	if( current_user_can('contributor') ) {
 
@@ -57,20 +61,21 @@ function premoderationTA(){
 		    	$authorEmail = get_userdata($authorId)->user_email;
 		    	if (preg_match($pattern, $subject)) {
 		    		
-		    		//mail($authorEmail, 'wp_subject', 'message');
+		    		$message = "Hello, the article was rejected, it was found an ad code ($replace)";
+		    		mail($authorEmail, 'Article was rejected', $message);
 
-		    		// if ( ! wp_is_post_revision( $post_id ) ){
-		    		// 	remove_action('save_post', 'premoderationTA');
+		    		if ( ! wp_is_post_revision( $post_id ) ){
+		    			remove_action('save_post', 'premoderationTA');
 		    			
-		    		// 	$new_post_status = array(
-		    		// 			'ID' => $post_id,
-		    		// 			'post_status' => 'draft'
-		    		// 	);
+		    			$new_post_status = array(
+		    					'ID' => get_the_ID(),
+		    					'post_status' => 'draft'
+		    			);
 		    			
-		    		// 	wp_update_post($new_post_status);
+		    			wp_update_post($new_post_status);    			
 		    			
-		    		// 	add_action( 'save_post', 'premoderationTA');
-		    		// }
+		    			add_action( 'save_post', 'premoderationTA');
+		    		}
 
 		    		return;
 		    	}
@@ -97,6 +102,5 @@ add_action('trash_to_pending','filterHookTA');
 add_action('draft_to_published','filterHookTA');
 add_action('draft_to_draft','filterHookTA');
 add_action('draft_to_trash','filterHookTA');
-
 
  ?> 
