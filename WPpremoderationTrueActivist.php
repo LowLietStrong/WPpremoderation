@@ -21,6 +21,7 @@ function PremoderationTA_admin() {
 	if (!empty($_POST)) {
 		if ($_POST['submit']=='Save Changes') {
 			update_option('premoderationTaReplace',$_POST['replace']);
+			update_option('premoderationTaEmail',$_POST['email']);
 		}
 	}
 
@@ -28,8 +29,10 @@ function PremoderationTA_admin() {
     echo "<p>Save as 'Draft' posts containing the following words <b title='Type the words you want to block, separated by commas.'>( ? )</b></p>";
     echo '<form method="POST">';
     echo "<textarea name='replace' cols='80' row='8'>".get_option('premoderationTaReplace')."</textarea>";
+    echo "<p>Please enter email adress of administrator you want to notify:</p><input type='text'  name='email' value='".get_option('premoderationTaEmail')."'>";
     submit_button();
     echo "</form>";
+
 }
 
 
@@ -59,10 +62,17 @@ function premoderationTA(){
 		    	$subject = get_post($post_id)->post_content;
 		    	$authorId = get_post($post_id)->post_author;
 		    	$authorEmail = get_userdata($authorId)->user_email;
+		    	$authorName = get_userdata($authorId)->user_login;
+		    	$urlpost = get_permalink($post_id,false); 
 		    	if (preg_match($pattern, $subject)) {
 		    		
-		    		$message = "Hello, the article was rejected, it was found an ad code ($replace)";
+		    		$message = "Hello, the article was rejected, it was found an ad code ($replace).\n $urlpost by $authorName";
 		    		mail($authorEmail, 'Article was rejected', $message);
+
+		    		$admin_email = get_option('premoderationTaEmail');
+		    		
+		    		mail($admin_email, 'Article was rejected', $message);
+
 
 		    		if ( ! wp_is_post_revision( $post_id ) ){
 		    			remove_action('save_post', 'premoderationTA');
